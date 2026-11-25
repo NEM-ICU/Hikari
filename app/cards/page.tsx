@@ -34,6 +34,8 @@ type CardEditDraft = {
   sentence_reading: string;
   sentence_translation: string;
   source_sentence: string;
+  source_timestamp: string;
+  source_end_timestamp: string;
 };
 
 function formatInterval(due: Date, now: Date) {
@@ -58,6 +60,7 @@ export default function CardsPage() {
   const [editingCard, setEditingCard] = useState<StudyCard | null>(null);
   const [editDraft, setEditDraft] = useState<CardEditDraft | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [editError, setEditError] = useState('');
   const [error, setError] = useState('');
   const [clockNow, setClockNow] = useState(() => Date.now());
@@ -147,8 +150,49 @@ export default function CardsPage() {
       sentence_reading: card.sentence_reading ?? '',
       sentence_translation: card.sentence_translation ?? '',
       source_sentence: card.source_sentence ?? '',
+      source_timestamp: card.source_timestamp === null ? '' : String(card.source_timestamp),
+      source_end_timestamp: card.source_end_timestamp === null ? '' : String(card.source_end_timestamp),
     });
     setEditError('');
+  };
+
+  const regenerateSentenceDetails = async () => {
+    if (!editingCard || !editDraft || isRegenerating) return;
+    const sentence = editDraft.front.trim();
+    if (!sentence) {
+      setEditError('Enter a Japanese sentence before regenerating its reading and translation.');
+      return;
+    }
+    setIsRegenerating(true);
+    setEditError('');
+    try {
+      const response = await fetch('/api/mine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetSentence: sentence,
+          contextBefore: '',
+          contextAfter: '',
+          videoId: editingCard.source_video_id ?? '',
+          timestamp: Number(editDraft.source_timestamp) || 0,
+          provider: 'ollama',
+        }),
+      });
+      const result = await response.json() as { sentence_reading?: string; sentence_en?: string; error?: string };
+      if (!response.ok) throw new Error(result.error || `Could not regenerate sentence details (${response.status}).`);
+      if (!result.sentence_reading || !result.sentence_en) throw new Error('The AI response did not include a reading and translation.');
+      setEditDraft((draft) => draft ? {
+        ...draft,
+        back: result.sentence_en!,
+        reading: result.sentence_reading!,
+        sentence_translation: result.sentence_en!,
+        sentence_reading: result.sentence_reading!,
+      } : draft);
+    } catch (cause) {
+      setEditError(cause instanceof Error ? cause.message : 'Could not regenerate sentence details.');
+    } finally {
+      setIsRegenerating(false);
+    }
   };
 
   const saveCardEdits = async (event: FormEvent<HTMLFormElement>) => {
@@ -156,6 +200,16 @@ export default function CardsPage() {
     if (!client || !session || !editingCard || !editDraft || isSavingEdit) return;
     if (!editDraft.front.trim()) {
       setEditError('The card front cannot be empty.');
+      return;
+    }
+    const startTime = editDraft.source_timestamp.trim() ? Number(editDraft.source_timestamp) : null;
+    const endTime = editDraft.source_end_timestamp.trim() ? Number(editDraft.source_end_timestamp) : null;
+    if (editingCard.card_type === 'sentence' && editingCard.source_video_id && (startTime === null || endTime === null || !Number.isFinite(startTime) || !Number.isFinite(endTime))) {
+      setEditError('Enter valid video start and end times in seconds.');
+      return;
+    }
+    if (editingCard.card_type === 'sentence' && startTime !== null && endTime !== null && endTime < startTime) {
+      setEditError('The clip end time must be after its start time.');
       return;
     }
     setIsSavingEdit(true);
@@ -168,6 +222,7 @@ export default function CardsPage() {
           sentence_reading: editDraft.reading.trim() || null,
           sentence_translation: editDraft.back.trim() || null,
           source_sentence: editDraft.front.trim() || null,
+          ...(editingCard.source_video_id ? { source_timestamp: startTime, source_end_timestamp: endTime } : {}),
           updated_at: new Date().toISOString(),
         }
       : {
@@ -406,6 +461,13 @@ export default function CardsPage() {
                   <EditField label="Japanese sentence" value={editDraft.front} onChange={(front) => setEditDraft((draft) => draft ? { ...draft, front } : draft)} required rows={3} />
                   <EditField label="Translation" value={editDraft.back} onChange={(back) => setEditDraft((draft) => draft ? { ...draft, back } : draft)} rows={2} />
                   <EditField label="Sentence reading" value={editDraft.reading} onChange={(reading) => setEditDraft((draft) => draft ? { ...draft, reading } : draft)} rows={2} />
+                  {editingCard.source_video_id && <div className="grid gap-4 sm:grid-cols-2">
+                    <EditField label="Clip start (seconds)" type="number" min="0" step="0.1" value={editDraft.source_timestamp} onChange={(source_timestamp) => setEditDraft((draft) => draft ? { ...draft, source_timestamp } : draft)} />
+                    <EditField label="Clip end (seconds)" type="number" min="0" step="0.1" value={editDraft.source_end_timestamp} onChange={(source_end_timestamp) => setEditDraft((draft) => draft ? { ...draft, source_end_timestamp } : draft)} />
+                  </div>}
+                  <button type="button" onClick={() => void regenerateSentenceDetails()} disabled={isRegenerating || isSavingEdit} className="rounded-lg border border-amber-300/25 px-4 py-2.5 text-sm font-medium text-amber-200 transition hover:bg-amber-300/10 disabled:opacity-50">
+                    {isRegenerating ? 'Regenerating…' : 'Regenerate reading & translation'}
+                  </button>
                 </>
               ) : (
                 <>
@@ -438,14 +500,14 @@ export default function CardsPage() {
   );
 }
 
-function EditField({ label, value, onChange, required = false, rows = 1 }: { label: string; value: string; onChange: (value: string) => void; required?: boolean; rows?: number }) {
+function EditField({ label, value, onChange, required = false, rows = 1, type = 'text', min, step }: { label: string; value: string; onChange: (value: string) => void; required?: boolean; rows?: number; type?: 'text' | 'number'; min?: string; step?: string }) {
   const className = 'mt-1.5 w-full rounded-lg border border-white/10 bg-[#15171d] px-3 py-2.5 text-sm text-white outline-none placeholder:text-gray-600 focus:border-amber-300/40';
   return (
     <label className="block text-xs font-medium text-gray-400">
       {label}
       {rows > 1
         ? <textarea value={value} onChange={(event) => onChange(event.target.value)} required={required} rows={rows} className={className} />
-        : <input value={value} onChange={(event) => onChange(event.target.value)} required={required} className={className} />}
+        : <input type={type} min={min} step={step} value={value} onChange={(event) => onChange(event.target.value)} required={required} className={className} />}
     </label>
   );
 }
