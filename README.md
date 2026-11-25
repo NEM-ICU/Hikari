@@ -27,10 +27,10 @@ Hikari is a Next.js 15 (App Router) web application that lets you:
 
 1. Create a Supabase project.
 2. Copy `.env.example` to `.env.local` and add the project URL and public anon key from **Project Settings → API**.
-3. In the Supabase SQL Editor, run [`supabase/migrations/202611250001_create_study_cards.sql`](supabase/migrations/202611250001_create_study_cards.sql).
+3. In the Supabase SQL Editor, run the migrations in order: [`202611250001_create_study_cards.sql`](supabase/migrations/202611250001_create_study_cards.sql), [`202611250002_create_kanji_corner.sql`](supabase/migrations/202611250002_create_kanji_corner.sql), [`202611250003_kanji_enrich.sql`](supabase/migrations/202611250003_kanji_enrich.sql), [`202611250004_kanji_decks_and_components.sql`](supabase/migrations/202611250004_kanji_decks_and_components.sql), [`202611250005_kanji_review_sessions.sql`](supabase/migrations/202611250005_kanji_review_sessions.sql), [`202611250006_kanji_guided_path.sql`](supabase/migrations/202611250006_kanji_guided_path.sql), and [`202611250007_kanji_meaning_only_reviews.sql`](supabase/migrations/202611250007_kanji_meaning_only_reviews.sql).
 4. In **Authentication → URL Configuration**, set the local site URL to `http://localhost:3000` and allow `http://localhost:3000/**` as a redirect URL. Add your deployed app URL before using email sign-in in production.
 
-The migration enables row-level security so each signed-in user can access only their own cards and reviews. Hikari signs users in with an email magic link. Save mined cards from the Sentence Mining preview; review them from **Card Learning**. Anki export remains optional.
+The migrations enable row-level security so each signed-in user can access only their own cards, kanji, and review history. Hikari signs users in with an email magic link. Save mined cards from the Sentence Mining preview; review them from **Card Learning**. In **Kanji Corner**, the guided path teaches five fixed kanji and fifteen curated related words per level, then advances the saved profile from N5 through N1. Custom kanji selection and user-created jukugo decks remain available in **Custom study**. The pathway vocabulary is a practical study sequence, not an official JLPT vocabulary list. Anki export remains optional.
 
 ### 2. Install AnkiConnect (optional)
 
@@ -114,6 +114,14 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 7. **Save to Hikari Library** — save the sentence and vocabulary cards to your Supabase account for review.
 8. **Push to Anki (optional)** — select your deck and note types, then click **📤 Push to Anki**.
 
+### Kanji Corner
+
+1. Sign in with your email magic link. Your guided profile starts at N5 and is saved to your account.
+2. Learn the five kanji selected for that level. Complete a meaning check for each character; readings remain visible as study information.
+3. Complete that level’s fifteen curated jukugo reviews. Each word checks its meaning, with an optional reading reveal.
+4. Completing all fifteen words advances your saved profile to the next level. Reviews from previously unlocked levels remain in the queue.
+5. Choose **Custom study** any time to browse arbitrary kanji and create your own vocabulary decks.
+
 ### Keyboard Shortcuts
 
 | Key | Action |
@@ -133,7 +141,7 @@ KotoMine/
 │   ├── page.tsx            # Home menu
 │   ├── sentence-mining/    # Video subtitle mining
 │   ├── cards/              # FSRS card review
-│   ├── kanji/              # Kanji Corner placeholder
+│   ├── kanji/              # Guided JLPT path and custom kanji study
 │   ├── layout.tsx          # Root layout with dark theme
 │   ├── globals.css         # Global styles & subtitle animations
 │   └── api/                # AI mining and subtitle endpoints
@@ -143,13 +151,16 @@ KotoMine/
 │   ├── SubtitlePanel.tsx   # Synchronized subtitle list
 │   ├── PlaybackControls.tsx # Play/pause/seek/mine buttons
 │   ├── MiningPreview.tsx   # Right panel with card editor
-│   └── SubtitleImport.tsx  # VTT/SRT import dialog
+│   ├── SubtitleImport.tsx  # VTT/SRT import dialog
+│   ├── KanjiPathway.tsx    # Guided JLPT level progression
+│   └── KanjiDecks.tsx      # Custom jukugo decks and reviews
 ├── lib/
 │   ├── types.ts            # TypeScript interfaces
 │   ├── studyCards.ts       # Study card types and FSRS serialization
 │   ├── supabase.ts         # Supabase browser client
 │   ├── ankiConnect.ts      # AnkiConnect client service
-│   └── subtitleParser.ts   # VTT/SRT parser utilities
+│   ├── subtitleParser.ts   # VTT/SRT parser utilities
+│   └── kanjiCurriculum.ts  # Curated guided-level kanji and jukugo sets
 ├── supabase/migrations/    # Study card tables, RLS policies, review RPC
 ├── .env.example            # Environment variable template
 └── README.md

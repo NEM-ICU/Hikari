@@ -24,12 +24,12 @@ const sections = [
   {
     number: '03',
     title: 'Kanji Corner',
-    description: 'Explore kanji, readings, and words through focused practice.',
+    description: 'Learn kanji meanings and readings, then strengthen them with spaced reviews.',
     href: '/kanji',
     icon: '漢',
     accent: 'from-rose-400/15 to-pink-500/5',
-    tag: 'COMING SOON',
-    available: false,
+    tag: 'READY TO USE',
+    available: true,
   },
 ];
 
