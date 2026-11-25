@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #1a1d24;
+  --card: #222732;
+  --accent: #fca311;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1d24;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3f4b;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #fca311;
+}
+
+/* Subtitle highlight animation */
+.subtitle-active {
+  background-color: rgba(120, 60, 0, 0.35);
+  border-left: 3px solid #fca311;
+}
+
+.subtitle-line {
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.subtitle-line:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
