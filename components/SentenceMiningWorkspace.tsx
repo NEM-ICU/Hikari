@@ -81,6 +81,7 @@ export default function KotoMinePage() {
     } else {
       showToast(`Saved ${saved} ${saved === 1 ? 'card' : 'cards'} to your Hikari Library`, 'success');
     }
+    if (saved > 0) setMinedData(null);
   }, [showToast]);
 
   // ─── Anki connection polling ───────────────────────────────────────────────
@@ -315,6 +316,7 @@ export default function KotoMinePage() {
         `Pushed ${successCount}/${results.length} cards to Anki!`,
         'success'
       );
+      if (successCount > 0) setMinedData(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Push failed';
       showToast(msg, 'error');
