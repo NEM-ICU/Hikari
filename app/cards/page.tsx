@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { fsrs, Rating, type CardInput } from 'ts-fsrs';
 import EmailMagicLink from '@/components/EmailMagicLink';
 import { useSupabaseSession } from '@/lib/useSupabaseSession';
@@ -25,6 +25,16 @@ const scheduler = fsrs({
   relearning_steps: ['10m'],
 });
 type CardFilter = 'all' | StudyCardType;
+type CardEditDraft = {
+  front: string;
+  back: string;
+  reading: string;
+  meaning: string;
+  breakdown: string;
+  sentence_reading: string;
+  sentence_translation: string;
+  source_sentence: string;
+};
 
 function formatInterval(due: Date, now: Date) {
   const minutes = Math.max(1, Math.ceil((due.getTime() - now.getTime()) / 60_000));
@@ -45,6 +55,10 @@ export default function CardsPage() {
   const [revealed, setRevealed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isAnswering, setIsAnswering] = useState(false);
+  const [editingCard, setEditingCard] = useState<StudyCard | null>(null);
+  const [editDraft, setEditDraft] = useState<CardEditDraft | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState('');
   const [error, setError] = useState('');
   const [clockNow, setClockNow] = useState(() => Date.now());
 
@@ -120,6 +134,67 @@ export default function CardsPage() {
     const { error: deleteError } = await client.from('study_cards').delete().eq('id', card.id);
     if (deleteError) setError(deleteError.message);
     else setCards((existing) => existing.filter((item) => item.id !== card.id));
+  };
+
+  const startEditing = (card: StudyCard) => {
+    setEditingCard(card);
+    setEditDraft({
+      front: card.front,
+      back: card.back,
+      reading: card.reading ?? '',
+      meaning: card.meaning ?? '',
+      breakdown: card.breakdown ?? '',
+      sentence_reading: card.sentence_reading ?? '',
+      sentence_translation: card.sentence_translation ?? '',
+      source_sentence: card.source_sentence ?? '',
+    });
+    setEditError('');
+  };
+
+  const saveCardEdits = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!client || !session || !editingCard || !editDraft || isSavingEdit) return;
+    if (!editDraft.front.trim()) {
+      setEditError('The card front cannot be empty.');
+      return;
+    }
+    setIsSavingEdit(true);
+    setEditError('');
+    const changes = editingCard.card_type === 'sentence'
+      ? {
+          front: editDraft.front.trim(),
+          back: editDraft.back.trim(),
+          reading: editDraft.reading.trim() || null,
+          sentence_reading: editDraft.reading.trim() || null,
+          sentence_translation: editDraft.back.trim() || null,
+          source_sentence: editDraft.front.trim() || null,
+          updated_at: new Date().toISOString(),
+        }
+      : {
+          front: editDraft.front.trim(),
+          back: editDraft.meaning.trim(),
+          reading: editDraft.reading.trim() || null,
+          meaning: editDraft.meaning.trim() || null,
+          breakdown: editDraft.breakdown.trim() || null,
+          sentence_reading: editDraft.sentence_reading.trim() || null,
+          sentence_translation: editDraft.sentence_translation.trim() || null,
+          source_sentence: editDraft.source_sentence.trim() || null,
+          updated_at: new Date().toISOString(),
+        };
+    const { data, error: updateError } = await client
+      .from('study_cards')
+      .update(changes)
+      .eq('id', editingCard.id)
+      .eq('user_id', session.user.id)
+      .select('*')
+      .single();
+    if (updateError) setEditError(updateError.message);
+    else {
+      setCards((existing) => existing.map((card) => card.id === editingCard.id ? data as StudyCard : card));
+      setEditingCard(null);
+      setEditDraft(null);
+    }
+    setIsSavingEdit(false);
   };
 
   if (!client) {
@@ -206,7 +281,10 @@ export default function CardsPage() {
                 <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${currentCard.card_type === 'sentence' ? 'bg-amber-300/10 text-amber-200' : 'bg-sky-300/10 text-sky-200'}`}>
                   {currentCard.card_type}
                 </span>
-                <button type="button" onClick={() => deleteCard(currentCard)} className="text-xs text-gray-600 transition hover:text-red-300">Delete card</button>
+                <div className="flex items-center gap-4">
+                  <button type="button" onClick={() => startEditing(currentCard)} className="text-xs text-amber-300 transition hover:text-amber-200">Edit card</button>
+                  <button type="button" onClick={() => deleteCard(currentCard)} className="text-xs text-gray-600 transition hover:text-red-300">Delete card</button>
+                </div>
               </div>
 
               <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
@@ -292,9 +370,83 @@ export default function CardsPage() {
               <div className="flex justify-between"><span className="text-gray-400">Vocabulary cards</span><span className="text-white">{cards.filter((card) => card.card_type === 'vocabulary').length}</span></div>
             </div>
           </div>
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1d2028] p-5">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold tracking-wider text-gray-500">EDIT SAVED CARDS</p>
+              <span className="text-[10px] text-gray-600">{filteredCards.length}</span>
+            </div>
+            <div className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
+              {filteredCards.map((card) => (
+                <div key={card.id} className="flex items-center justify-between gap-3 rounded-lg bg-[#15171d] px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-gray-200">{card.front}</p>
+                    <p className="mt-0.5 text-[10px] capitalize text-gray-600">{card.card_type}</p>
+                  </div>
+                  <button type="button" onClick={() => startEditing(card)} className="shrink-0 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-amber-200 hover:bg-amber-300/10">Edit</button>
+                </div>
+              ))}
+              {!filteredCards.length && <p className="py-4 text-center text-xs text-gray-600">No cards to edit.</p>}
+            </div>
+          </div>
         </aside>
       </div>
+      {editingCard && editDraft && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="edit-card-title" className="my-auto w-full max-w-2xl rounded-2xl border border-white/10 bg-[#1d2028] p-5 shadow-2xl sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">{editingCard.card_type} card</p>
+                <h2 id="edit-card-title" className="mt-1 text-xl font-semibold text-white">Edit card</h2>
+              </div>
+              <button type="button" onClick={() => { setEditingCard(null); setEditDraft(null); }} className="rounded-lg px-2 py-1 text-gray-400 hover:bg-white/5 hover:text-white" aria-label="Close edit card dialog">✕</button>
+            </div>
+            <form onSubmit={(event) => void saveCardEdits(event)} className="mt-5 space-y-4">
+              {editingCard.card_type === 'sentence' ? (
+                <>
+                  <EditField label="Japanese sentence" value={editDraft.front} onChange={(front) => setEditDraft((draft) => draft ? { ...draft, front } : draft)} required rows={3} />
+                  <EditField label="Translation" value={editDraft.back} onChange={(back) => setEditDraft((draft) => draft ? { ...draft, back } : draft)} rows={2} />
+                  <EditField label="Sentence reading" value={editDraft.reading} onChange={(reading) => setEditDraft((draft) => draft ? { ...draft, reading } : draft)} rows={2} />
+                </>
+              ) : (
+                <>
+                  <EditField label="Word" value={editDraft.front} onChange={(front) => setEditDraft((draft) => draft ? { ...draft, front } : draft)} required />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <EditField label="Reading" value={editDraft.reading} onChange={(reading) => setEditDraft((draft) => draft ? { ...draft, reading } : draft)} />
+                    <EditField label="Meaning" value={editDraft.meaning} onChange={(meaning) => setEditDraft((draft) => draft ? { ...draft, meaning } : draft)} />
+                  </div>
+                  <EditField label="Breakdown" value={editDraft.breakdown} onChange={(breakdown) => setEditDraft((draft) => draft ? { ...draft, breakdown } : draft)} rows={2} />
+                  <details className="rounded-lg border border-white/[0.08] bg-[#15171d] px-3 py-2.5">
+                    <summary className="cursor-pointer text-xs font-medium text-gray-400">Sentence context</summary>
+                    <div className="mt-3 space-y-3">
+                      <EditField label="Source sentence" value={editDraft.source_sentence} onChange={(source_sentence) => setEditDraft((draft) => draft ? { ...draft, source_sentence } : draft)} rows={2} />
+                      <EditField label="Sentence reading" value={editDraft.sentence_reading} onChange={(sentence_reading) => setEditDraft((draft) => draft ? { ...draft, sentence_reading } : draft)} rows={2} />
+                      <EditField label="Sentence translation" value={editDraft.sentence_translation} onChange={(sentence_translation) => setEditDraft((draft) => draft ? { ...draft, sentence_translation } : draft)} rows={2} />
+                    </div>
+                  </details>
+                </>
+              )}
+              {editError && <p role="alert" className="rounded-lg border border-red-400/20 bg-red-400/[0.07] px-3 py-2 text-sm text-red-200">{editError}</p>}
+              <div className="flex justify-end gap-2 border-t border-white/[0.08] pt-4">
+                <button type="button" onClick={() => { setEditingCard(null); setEditDraft(null); }} className="rounded-lg border border-white/10 px-4 py-2.5 text-sm text-gray-300 hover:text-white">Cancel</button>
+                <button type="submit" disabled={isSavingEdit} className="rounded-lg bg-[#fca311] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-50">{isSavingEdit ? 'Saving…' : 'Save changes'}</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </StudyPageFrame>
+  );
+}
+
+function EditField({ label, value, onChange, required = false, rows = 1 }: { label: string; value: string; onChange: (value: string) => void; required?: boolean; rows?: number }) {
+  const className = 'mt-1.5 w-full rounded-lg border border-white/10 bg-[#15171d] px-3 py-2.5 text-sm text-white outline-none placeholder:text-gray-600 focus:border-amber-300/40';
+  return (
+    <label className="block text-xs font-medium text-gray-400">
+      {label}
+      {rows > 1
+        ? <textarea value={value} onChange={(event) => onChange(event.target.value)} required={required} rows={rows} className={className} />
+        : <input value={value} onChange={(event) => onChange(event.target.value)} required={required} className={className} />}
+    </label>
   );
 }
 
