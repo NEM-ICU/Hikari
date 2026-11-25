@@ -18,7 +18,12 @@ const StudyCardClip = dynamic(() => import('@/components/StudyCardClip'), {
   loading: () => <div className="mt-6 aspect-video w-full animate-pulse rounded-xl bg-white/[0.05]" />,
 });
 
-const scheduler = fsrs({ request_retention: 0.9 });
+const scheduler = fsrs({
+  request_retention: 0.9,
+  enable_short_term: true,
+  learning_steps: ['1m', '10m'],
+  relearning_steps: ['10m'],
+});
 type CardFilter = 'all' | StudyCardType;
 
 function formatInterval(due: Date, now: Date) {
@@ -41,6 +46,7 @@ export default function CardsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isAnswering, setIsAnswering] = useState(false);
   const [error, setError] = useState('');
+  const [clockNow, setClockNow] = useState(() => Date.now());
 
   const loadCards = useCallback(async () => {
     if (!client || !session) return;
@@ -63,9 +69,18 @@ export default function CardsPage() {
     () => cards.filter((card) => filter === 'all' || card.card_type === filter),
     [cards, filter]
   );
-  const dueCards = filteredCards.filter((card) => new Date(card.due_at).getTime() <= Date.now());
+  const dueCards = filteredCards.filter((card) => new Date(card.due_at).getTime() <= clockNow);
+  const nextDueCard = filteredCards
+    .filter((card) => new Date(card.due_at).getTime() > clockNow)
+    .sort((a, b) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime())[0] ?? null;
   const currentCard = dueCards[0] ?? null;
-  const now = new Date();
+  const now = new Date(clockNow);
+
+  useEffect(() => {
+    if (!nextDueCard) return;
+    const timer = window.setInterval(() => setClockNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [nextDueCard?.due_at]);
   const choices = currentCard
     ? scheduler.repeat(getCardState(currentCard), now)
     : null;
@@ -249,9 +264,15 @@ export default function CardsPage() {
           ) : (
             <div className="flex min-h-[23rem] flex-col items-center justify-center text-center">
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-300/10 text-2xl text-emerald-200">✓</span>
-              <h2 className="mt-5 text-xl font-semibold text-white">{filteredCards.length ? 'You’re all caught up' : 'No cards in this deck yet'}</h2>
+              <h2 className="mt-5 text-xl font-semibold text-white">
+                {filteredCards.length ? (nextDueCard ? 'Next card is learning' : 'You’re all caught up') : 'No cards in this deck yet'}
+              </h2>
               <p className="mt-2 max-w-sm text-sm leading-6 text-gray-400">
-                {filteredCards.length ? 'There are no cards due in this category. Come back when they are ready.' : 'Mine a sentence in Sentence Mining, then save its sentence and vocabulary cards here.'}
+                {filteredCards.length
+                  ? nextDueCard
+                    ? `Your next learning card will return in ${formatInterval(new Date(nextDueCard.due_at), now)}. This page will bring it back automatically.`
+                    : 'There are no cards due in this category. Come back when they are ready.'
+                  : 'Mine a sentence in Sentence Mining, then save its sentence and vocabulary cards here.'}
               </p>
               {!filteredCards.length && <Link href="/sentence-mining" className="mt-5 rounded-lg bg-[#fca311] px-4 py-2.5 text-sm font-semibold text-[#171717] hover:bg-amber-300">Go to Sentence Mining</Link>}
             </div>
