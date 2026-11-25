@@ -24,15 +24,22 @@ export default function Header({
   return (
     <header className="flex flex-col sm:flex-row items-center gap-3 px-4 py-3 bg-[#222732] border-b border-gray-700/50">
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-2 shrink-0 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fca311]" aria-label="Hikari home">
-        <div className="w-8 h-8 rounded-lg bg-[#fca311] flex items-center justify-center shadow-sm shadow-amber-500/20">
-          <span className="text-black font-black text-sm" aria-hidden="true">光</span>
-        </div>
-        <span className="font-bold text-lg tracking-tight" aria-label="Hikari">
-          <span className="text-[#fca311]">Hika</span>
-          <span className="text-white">ri</span>
-        </span>
-      </Link>
+      <div className="flex shrink-0 items-center gap-3">
+        <Link
+          href="/"
+          className="rounded-md px-2 py-1.5 text-xs font-medium text-gray-400 transition hover:bg-white/[0.05] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fca311]"
+        >
+          ← Home
+        </Link>
+        <Link href="/" className="flex items-center gap-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fca311]" aria-label="Hikari home">
+          <div className="w-8 h-8 rounded-lg bg-[#fca311] flex items-center justify-center shadow-sm shadow-amber-500/20">
+            <span className="text-black font-black text-sm" aria-hidden="true">光</span>
+          </div>
+          <span className="font-bold text-lg tracking-tight" aria-label="Hikari">
+            <span className="text-white">Hikari</span>
+          </span>
+        </Link>
+      </div>
 
       {/* URL Input */}
       <div className="flex flex-1 w-full gap-2">
