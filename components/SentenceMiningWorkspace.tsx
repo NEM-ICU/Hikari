@@ -73,8 +73,14 @@ export default function KotoMinePage() {
     []
   );
 
-  const handleCardsSaved = useCallback((count: number) => {
-    showToast(`Saved ${count} cards to your Hikari Library`, 'success');
+  const handleCardsSaved = useCallback(({ saved, skipped }: { saved: number; skipped: number }) => {
+    if (saved === 0 && skipped > 0) {
+      showToast(`Already in your Hikari Library — skipped ${skipped} duplicate ${skipped === 1 ? 'card' : 'cards'}`, 'success');
+    } else if (skipped > 0) {
+      showToast(`Saved ${saved} new ${saved === 1 ? 'card' : 'cards'}; skipped ${skipped} already in your library`, 'success');
+    } else {
+      showToast(`Saved ${saved} ${saved === 1 ? 'card' : 'cards'} to your Hikari Library`, 'success');
+    }
   }, [showToast]);
 
   // ─── Anki connection polling ───────────────────────────────────────────────

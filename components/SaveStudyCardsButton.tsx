@@ -22,7 +22,21 @@ interface SaveStudyCardsButtonProps {
   timestamp: number;
   videoStartTimestamp: number;
   videoEndTimestamp: number;
-  onSaved: (count: number) => void;
+  onSaved: (result: SaveResult) => void;
+}
+
+interface SaveResult {
+  saved: number;
+  skipped: number;
+}
+
+function cardKey(card: { card_type: string; front: string }) {
+  const normalizedFront = card.front
+    .normalize('NFKC')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase();
+  return `${card.card_type}:${normalizedFront}`;
 }
 
 function describeSaveError(error: unknown) {
@@ -64,9 +78,37 @@ export default function SaveStudyCardsButton({
       payload.videoStartTimestamp,
       payload.videoEndTimestamp
     );
-    const { error: insertError } = await client.from('study_cards').insert(rows);
+
+    const existingCards: { card_type: string; front: string }[] = [];
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error: lookupError } = await client
+        .from('study_cards')
+        .select('card_type, front')
+        .eq('user_id', userId)
+        .order('id', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (lookupError) throw lookupError;
+      existingCards.push(...(data ?? []));
+      if (!data || data.length < pageSize) break;
+    }
+
+    const knownKeys = new Set(
+      existingCards.map((card) => cardKey(card))
+    );
+    const newRows = rows.filter((row) => {
+      const key = cardKey(row);
+      if (knownKeys.has(key)) return false;
+      knownKeys.add(key);
+      return true;
+    });
+    const skipped = rows.length - newRows.length;
+
+    if (newRows.length === 0) return { saved: 0, skipped };
+
+    const { error: insertError } = await client.from('study_cards').insert(newRows);
     if (insertError) throw new Error(describeSaveError(insertError));
-    return rows.length;
+    return { saved: newRows.length, skipped };
   }, [client]);
 
   useEffect(() => {
@@ -87,8 +129,8 @@ export default function SaveStudyCardsButton({
       return;
     }
     saveCards(pendingSave, session.user.id)
-      .then((count) => {
-        onSaved(count);
+      .then((result) => {
+        onSaved(result);
       })
       .catch((saveError: unknown) => {
         window.sessionStorage.setItem(PENDING_SAVE_KEY, rawPendingSave);
@@ -114,8 +156,8 @@ export default function SaveStudyCardsButton({
 
     setSaving(true);
     try {
-      const count = await saveCards(payload, session.user.id);
-      onSaved(count);
+      const result = await saveCards(payload, session.user.id);
+      onSaved(result);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : describeSaveError(saveError));
     } finally {
