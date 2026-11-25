@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Hikari — Learn Japanese from YouTube',
-  description: 'Turn Japanese YouTube subtitles into vocabulary cards for Anki.',
+  description: 'Mine Japanese sentences, save cards, and review them with spaced repetition.',
   applicationName: 'Hikari',
   icons: { icon: '/icon.svg' },
 };

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
+import Link from 'next/link';
 
 interface HeaderProps {
   videoUrl: string;
@@ -23,7 +24,7 @@ export default function Header({
   return (
     <header className="flex flex-col sm:flex-row items-center gap-3 px-4 py-3 bg-[#222732] border-b border-gray-700/50">
       {/* Logo */}
-      <div className="flex items-center gap-2 shrink-0">
+      <Link href="/" className="flex items-center gap-2 shrink-0 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fca311]" aria-label="Hikari home">
         <div className="w-8 h-8 rounded-lg bg-[#fca311] flex items-center justify-center shadow-sm shadow-amber-500/20">
           <span className="text-black font-black text-sm" aria-hidden="true">光</span>
         </div>
@@ -31,7 +32,7 @@ export default function Header({
           <span className="text-[#fca311]">Hika</span>
           <span className="text-white">ri</span>
         </span>
-      </div>
+      </Link>
 
       {/* URL Input */}
       <div className="flex flex-1 w-full gap-2">

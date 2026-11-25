@@ -1,33 +1,44 @@
 # Hikari 光 🎌
 
-**Bring Japanese to light, one video and one Anki card at a time.**
+**Bring Japanese to light, one video and one review at a time.**
 
 Hikari is a Next.js 15 (App Router) web application that lets you:
 1. Watch Japanese YouTube videos with synchronized subtitles
 2. Click any subtitle line to jump to that moment
 3. Press **M** (or click "Mine Line") to extract vocabulary with AI
 4. Review and edit the extracted cards
-5. Push them directly to Anki with one click
+5. Save sentence and vocabulary cards to your Hikari library for FSRS review
+6. Optionally push cards directly to Anki
 
 ---
 
 ## Prerequisites
 
-- **Node.js** 18+
-- **Anki** (desktop app) with the **AnkiConnect** add-on
+- **Node.js** 20+
+- **Supabase** project for account sign-in and cloud-saved study cards
+- **Anki** (desktop app) with the **AnkiConnect** add-on (optional)
 - One AI provider: **Ollama** locally, or an API key for **Hugging Face**, **Groq**, or **DeepSeek**
 
 ---
 
 ## Setup
 
-### 1. Install AnkiConnect
+### 1. Configure Supabase study cards
+
+1. Create a Supabase project.
+2. Copy `.env.example` to `.env.local` and add the project URL and public anon key from **Project Settings → API**.
+3. In the Supabase SQL Editor, run [`supabase/migrations/202611250001_create_study_cards.sql`](supabase/migrations/202611250001_create_study_cards.sql).
+4. In **Authentication → URL Configuration**, set the local site URL to `http://localhost:3000` and allow `http://localhost:3000/**` as a redirect URL. Add your deployed app URL before using email sign-in in production.
+
+The migration enables row-level security so each signed-in user can access only their own cards and reviews. Hikari signs users in with an email magic link. Save mined cards from the Sentence Mining preview; review them from **Card Learning**. Anki export remains optional.
+
+### 2. Install AnkiConnect (optional)
 
 1. Open Anki → **Tools → Add-ons → Get Add-ons...**
 2. Enter code: **`2055492159`**
 3. Restart Anki
 
-### 2. Configure AnkiConnect CORS
+### 3. Configure AnkiConnect CORS
 
 AnkiConnect must allow requests from `http://localhost:3000`.
 
@@ -50,7 +61,7 @@ AnkiConnect must allow requests from `http://localhost:3000`.
 
 3. Click **OK** and restart Anki.
 
-### 3. Configure Anki Note Types
+### 4. Configure Anki Note Types
 
 Hikari uses two note types. You can use existing ones or create new ones.
 
@@ -81,7 +92,7 @@ npm install
 # then download the default Japanese-capable model
 ollama pull qwen2.5:3b
 
-# Option B — copy .env.local.example to .env.local and add the API key for
+# Option B — copy .env.example to .env.local and add the API key for
 # Hugging Face, Groq, or DeepSeek. Select the provider in the app.
 
 # Start the development server
@@ -99,8 +110,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 3. **Watch & navigate** — click any subtitle line to jump there. Use `Space` to play/pause, `←/→` to seek ±3s.
 4. **Choose an AI provider** — select Ollama, Hugging Face, Groq, or DeepSeek above the subtitle list.
 5. **Mine a line** — press `M` or click **⛏ Mine Line** to analyze the active subtitle.
-5. **Review & edit** — the right panel shows the sentence card and vocabulary cards. Edit any field.
-6. **Push to Anki** — select your deck and note types, then click **📤 Push to Anki**.
+6. **Review & edit** — edit the sentence and vocabulary cards in the right panel.
+7. **Save to Hikari Library** — save the sentence and vocabulary cards to your Supabase account for review.
+8. **Push to Anki (optional)** — select your deck and note types, then click **📤 Push to Anki**.
 
 ### Keyboard Shortcuts
 
@@ -118,12 +130,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```
 KotoMine/
 ├── app/
+│   ├── page.tsx            # Home menu
+│   ├── sentence-mining/    # Video subtitle mining
+│   ├── cards/              # FSRS card review
+│   ├── kanji/              # Kanji Corner placeholder
 │   ├── layout.tsx          # Root layout with dark theme
-│   ├── page.tsx            # Main app page (all state management)
 │   ├── globals.css         # Global styles & subtitle animations
-│   └── api/
-│       └── mine/
-│           └── route.ts    # Local Ollama AI endpoint
+│   └── api/                # AI mining and subtitle endpoints
 ├── components/
 │   ├── Header.tsx          # App header with URL input
 │   ├── VideoPlayer.tsx     # react-youtube wrapper
@@ -133,9 +146,12 @@ KotoMine/
 │   └── SubtitleImport.tsx  # VTT/SRT import dialog
 ├── lib/
 │   ├── types.ts            # TypeScript interfaces
+│   ├── studyCards.ts       # Study card types and FSRS serialization
+│   ├── supabase.ts         # Supabase browser client
 │   ├── ankiConnect.ts      # AnkiConnect client service
 │   └── subtitleParser.ts   # VTT/SRT parser utilities
-├── .env.local.example      # Environment variable template
+├── supabase/migrations/    # Study card tables, RLS policies, review RPC
+├── .env.example            # Environment variable template
 └── README.md
 ```
 
@@ -149,6 +165,8 @@ KotoMine/
 - **Video**: react-youtube (YouTube IFrame API)
 - **AI**: Selectable Ollama, Hugging Face, Groq, or DeepSeek provider
 - **Anki**: AnkiConnect REST API (port 8765)
+- **Database/Auth**: Supabase Postgres, Auth, and row-level security
+- **Scheduling**: FSRS via `ts-fsrs`
 
 ---
 

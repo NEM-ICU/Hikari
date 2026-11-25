@@ -2,11 +2,14 @@
 
 import React from 'react';
 import type { MinedData, VocabCard } from '@/lib/types';
+import SaveStudyCardsButton from '@/components/SaveStudyCardsButton';
 
 interface MiningPreviewProps {
   minedData: MinedData | null;
   videoId: string;
   timestamp: number;
+  videoStartTimestamp: number;
+  videoEndTimestamp: number;
   deckName: string;
   vocabModelName: string;
   sentenceModelName: string;
@@ -19,6 +22,7 @@ interface MiningPreviewProps {
   onVocabModelChange: (model: string) => void;
   onMinedDataChange: (data: MinedData) => void;
   onPushToAnki: () => void;
+  onCardsSaved: (count: number) => void;
 }
 
 function VocabCardEditor({
@@ -86,6 +90,8 @@ export default function MiningPreview({
   minedData,
   videoId,
   timestamp,
+  videoStartTimestamp,
+  videoEndTimestamp,
   deckName,
   vocabModelName,
   sentenceModelName,
@@ -98,6 +104,7 @@ export default function MiningPreview({
   onVocabModelChange,
   onMinedDataChange,
   onPushToAnki,
+  onCardsSaved,
 }: MiningPreviewProps) {
   const selectClass =
     'w-full px-2 py-1.5 rounded bg-[#1a1d24] border border-gray-600 text-sm text-gray-100 focus:outline-none focus:border-[#fca311] transition-colors';
@@ -320,7 +327,15 @@ export default function MiningPreview({
       </div>
 
       {/* Push to Anki Button */}
-      <div className="px-4 py-3 border-t border-gray-700/50">
+      <div className="space-y-2 px-4 py-3 border-t border-gray-700/50">
+        <SaveStudyCardsButton
+          minedData={minedData}
+          videoId={videoId}
+          timestamp={timestamp}
+          videoStartTimestamp={videoStartTimestamp}
+          videoEndTimestamp={videoEndTimestamp}
+          onSaved={onCardsSaved}
+        />
         <button
           onClick={onPushToAnki}
           disabled={!minedData || !ankiConnected || isPushing}
