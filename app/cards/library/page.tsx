@@ -7,7 +7,7 @@ import { useSupabaseSession } from '@/lib/useSupabaseSession';
 import type { StudyCard, StudyCardType } from '@/lib/studyCards';
 
 type CardFilter = 'all' | StudyCardType;
-type Draft = { front: string; back: string; reading: string; breakdown: string };
+type Draft = { front: string; back: string; reading: string; breakdown: string; sourceStart: string; sourceEnd: string };
 
 function dateLabel(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
@@ -50,17 +50,21 @@ export default function CardLibraryPage() {
   const startEditing = (card: StudyCard) => {
     setEditing(card);
     setEditError('');
-    setDraft({ front: card.front, back: card.back, reading: card.reading ?? '', breakdown: card.breakdown ?? '' });
+    setDraft({ front: card.front, back: card.back, reading: card.reading ?? '', breakdown: card.breakdown ?? '', sourceStart: card.source_timestamp == null ? '' : String(card.source_timestamp), sourceEnd: card.source_end_timestamp == null ? '' : String(card.source_end_timestamp) });
   };
 
   const saveEdit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!client || !session || !editing || !draft || saving) return;
     if (!draft.front.trim()) { setEditError('The card front cannot be empty.'); return; }
+    const start = draft.sourceStart.trim() ? Number(draft.sourceStart) : null;
+    const end = draft.sourceEnd.trim() ? Number(draft.sourceEnd) : null;
+    if (editing.card_type === 'sentence' && editing.source_video_id && (start === null || end === null || !Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < 0)) { setEditError('Enter valid video start and end times in seconds.'); return; }
+    if (editing.card_type === 'sentence' && start !== null && end !== null && end < start) { setEditError('The clip end time must be after its start time.'); return; }
     setSaving(true);
     setEditError('');
     const changes = editing.card_type === 'sentence'
-      ? { front: draft.front.trim(), back: draft.back.trim(), reading: draft.reading.trim() || null, sentence_reading: draft.reading.trim() || null, sentence_translation: draft.back.trim() || null, source_sentence: draft.front.trim(), updated_at: new Date().toISOString() }
+      ? { front: draft.front.trim(), back: draft.back.trim(), reading: draft.reading.trim() || null, sentence_reading: draft.reading.trim() || null, sentence_translation: draft.back.trim() || null, source_sentence: draft.front.trim(), ...(editing.source_video_id ? { source_timestamp: start, source_end_timestamp: end } : {}), updated_at: new Date().toISOString() }
       : { front: draft.front.trim(), back: draft.back.trim(), meaning: draft.back.trim() || null, reading: draft.reading.trim() || null, breakdown: draft.breakdown.trim() || null, updated_at: new Date().toISOString() };
     const { data, error: updateError } = await client.from('study_cards').update(changes).eq('id', editing.id).eq('user_id', session.user.id).select('*').single();
     if (updateError) setEditError(updateError.message);
@@ -106,36 +110,30 @@ export default function CardLibraryPage() {
     </div>
 
     {error && <p role="alert" className="mt-3 rounded-lg border border-red-400/20 bg-red-400/[0.07] px-3 py-2 text-sm text-red-200">{error}</p>}
-    {loading ? <p className="py-16 text-center text-sm text-gray-500">Loading saved cards…</p> : visibleCards.length ? <div className="mt-4 space-y-2">
-      {visibleCards.map((card) => <article key={card.id} className="rounded-xl border border-white/10 bg-[#1d2028] px-4 py-3 transition hover:border-white/20">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="mb-1.5 flex items-center gap-2">
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${card.card_type === 'sentence' ? 'bg-amber-300/10 text-amber-200' : 'bg-sky-300/10 text-sky-200'}`}>{card.card_type}</span>
-              <span className="text-[11px] text-gray-600">Saved {dateLabel(card.created_at)}</span>
-            </div>
-            <p className="whitespace-pre-wrap text-base font-medium leading-6 text-white">{card.front}</p>
-            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-gray-400">
-              {card.reading && <span>{card.reading}</span>}
-              {(card.meaning || card.back) && <span>{card.meaning || card.back}</span>}
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <button type="button" onClick={() => startEditing(card)} className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-amber-200 transition hover:bg-amber-300/10">Edit</button>
-            <button type="button" onClick={() => void deleteCard(card)} className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-red-400/10 hover:text-red-200">Delete</button>
-          </div>
-        </div>
-        <details className="mt-2 border-t border-white/[0.06] pt-2">
-          <summary className="w-fit cursor-pointer text-xs font-medium text-gray-500 hover:text-gray-300">Card details</summary>
-          <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+    {loading ? <p className="py-16 text-center text-sm text-gray-500">Loading saved cards…</p> : visibleCards.length ? <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-[#1d2028]">
+      <div className="hidden grid-cols-[7rem_minmax(0,1fr)_minmax(0,1fr)_8rem] gap-4 border-b border-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500 sm:grid"><span>Type</span><span>Card</span><span>Meaning</span><span>Saved</span></div>
+      {visibleCards.map((card) => <details key={card.id} className="group border-b border-white/[0.07] last:border-b-0">
+        <summary className="grid cursor-pointer list-none grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 px-4 py-3 transition hover:bg-white/[0.025] sm:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1fr)_8rem_auto] sm:gap-4">
+          <span className={`row-start-2 text-[10px] font-semibold uppercase tracking-wider sm:row-auto ${card.card_type === 'sentence' ? 'text-amber-200' : 'text-sky-200'}`}>{card.card_type}</span>
+          <span className="col-start-1 row-start-1 min-w-0 whitespace-pre-wrap text-sm font-medium text-white sm:col-auto sm:row-auto">{card.front}</span>
+          <span className="col-start-1 row-start-3 min-w-0 truncate text-xs text-gray-400 sm:col-auto sm:row-auto sm:text-sm">{card.reading || '—'} <span className="text-gray-600">·</span> {card.card_type === 'sentence' ? card.back : card.meaning || card.back}</span>
+          <span className="hidden text-xs text-gray-500 sm:block">{dateLabel(card.created_at)}</span>
+          <span aria-hidden="true" className="col-start-2 row-span-3 row-start-1 rotate-0 text-gray-500 transition group-open:rotate-180 sm:col-auto sm:row-auto">⌄</span>
+        </summary>
+        <div className="border-t border-white/[0.06] bg-black/10 px-4 py-3">
+          <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+            {card.card_type === 'sentence' && <Detail label="Translation" value={card.back} />}
+            {card.card_type === 'vocabulary' && <Detail label="Meaning" value={card.meaning || card.back} />}
+            {card.reading && <Detail label="Reading" value={card.reading} />}
             {card.breakdown && <Detail label="Breakdown" value={card.breakdown} />}
-            {card.card_type === 'sentence' && card.back && <Detail label="Translation" value={card.back} />}
             {card.sentence_translation && card.card_type === 'vocabulary' && <Detail label="Sentence translation" value={card.sentence_translation} />}
             {card.source_sentence && card.card_type === 'vocabulary' && <Detail label="Source sentence" value={card.source_sentence} />}
-            {card.source_video_id && <a className="text-xs font-medium text-sky-300 underline underline-offset-2 hover:text-sky-200" href={`https://youtu.be/${card.source_video_id}?t=${card.source_timestamp ?? 0}`} target="_blank" rel="noreferrer">Open source video</a>}
-          </div>
-        </details>
-      </article>)}
+            {card.source_video_id && <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Video clip</dt><dd className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"><a className="text-sky-300 underline underline-offset-2 hover:text-sky-200" href={`https://youtu.be/${card.source_video_id}?t=${card.source_timestamp ?? 0}`} target="_blank" rel="noreferrer">Open source video</a><span className="text-gray-400">{card.source_timestamp ?? 0}s–{card.source_end_timestamp ?? '…'}s</span></dd></div>}
+          </dl>
+          <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] pt-2 sm:hidden"><span className="text-xs text-gray-500">Saved {dateLabel(card.created_at)}</span><CardActions card={card} onEdit={startEditing} onDelete={deleteCard} /></div>
+          <div className="hidden sm:block"><CardActions card={card} onEdit={startEditing} onDelete={deleteCard} /></div>
+        </div>
+      </details>)}
     </div> : <section className="mt-4 rounded-2xl border border-dashed border-white/15 px-5 py-14 text-center">
       <p className="text-lg font-semibold text-white">{query || filter !== 'all' ? 'No cards match this search' : 'No saved cards yet'}</p>
       <p className="mt-2 text-sm text-gray-500">{query || filter !== 'all' ? 'Try a different search or card type.' : 'Save a sentence or vocabulary card from Sentence Mining to see it here.'}</p>
@@ -150,6 +148,7 @@ export default function CardLibraryPage() {
           <EditField label={editing.card_type === 'sentence' ? 'Translation' : 'Meaning'} value={draft.back} onChange={(back) => setDraft((current) => current ? { ...current, back } : current)} />
           <EditField label="Reading" value={draft.reading} onChange={(reading) => setDraft((current) => current ? { ...current, reading } : current)} />
           {editing.card_type === 'vocabulary' && <EditField label="Breakdown" value={draft.breakdown} onChange={(breakdown) => setDraft((current) => current ? { ...current, breakdown } : current)} />}
+          {editing.card_type === 'sentence' && editing.source_video_id && <div className="grid grid-cols-2 gap-3"><EditField label="Clip start (seconds)" type="number" value={draft.sourceStart} onChange={(sourceStart) => setDraft((current) => current ? { ...current, sourceStart } : current)} /><EditField label="Clip end (seconds)" type="number" value={draft.sourceEnd} onChange={(sourceEnd) => setDraft((current) => current ? { ...current, sourceEnd } : current)} /></div>}
           {editError && <p role="alert" className="rounded-lg border border-red-400/20 bg-red-400/[0.07] px-3 py-2 text-sm text-red-200">{editError}</p>}
           <div className="flex justify-end gap-2 border-t border-white/10 pt-3"><button type="button" onClick={() => { setEditing(null); setDraft(null); }} className="rounded-lg px-3 py-2 text-sm text-gray-400 hover:bg-white/5">Cancel</button><button type="submit" disabled={saving} className="rounded-lg bg-[#fca311] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50">{saving ? 'Saving…' : 'Save changes'}</button></div>
         </form>
@@ -159,11 +158,15 @@ export default function CardLibraryPage() {
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
-  return <div><p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</p><p className="mt-1 whitespace-pre-wrap text-sm text-gray-300">{value}</p></div>;
+  return <div><dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">{label}</dt><dd className="mt-1 whitespace-pre-wrap text-sm text-gray-300">{value}</dd></div>;
 }
 
-function EditField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return <label className="block text-xs font-medium text-gray-400">{label}<input required={label === 'Japanese sentence' || label === 'Word'} value={value} onChange={(event) => onChange(event.target.value)} className="mt-1.5 w-full rounded-lg border border-white/10 bg-[#15171d] px-3 py-2.5 text-sm text-white outline-none focus:border-amber-300/50" /></label>;
+function CardActions({ card, onEdit, onDelete }: { card: StudyCard; onEdit: (card: StudyCard) => void; onDelete: (card: StudyCard) => void }) {
+  return <div className="flex items-center gap-1"><button type="button" onClick={() => onEdit(card)} className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-amber-200 transition hover:bg-amber-300/10">Edit</button><button type="button" onClick={() => void onDelete(card)} className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-red-400/10 hover:text-red-200">Delete</button></div>;
+}
+
+function EditField({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (value: string) => void; type?: 'text' | 'number' }) {
+  return <label className="block text-xs font-medium text-gray-400">{label}<input type={type} min={type === 'number' ? 0 : undefined} step={type === 'number' ? 0.1 : undefined} required={label === 'Japanese sentence' || label === 'Word' || type === 'number'} value={value} onChange={(event) => onChange(event.target.value)} className="mt-1.5 w-full rounded-lg border border-white/10 bg-[#15171d] px-3 py-2.5 text-sm text-white outline-none focus:border-amber-300/50" /></label>;
 }
 
 function LibraryFrame({ children }: { children: ReactNode }) {
