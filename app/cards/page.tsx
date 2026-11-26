@@ -292,46 +292,33 @@ export default function CardsPage() {
 
   return (
     <StudyPageFrame>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold tracking-[0.18em] text-sky-200">YOUR STUDY DECK</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Card Learning</h1>
-          <p className="mt-2 text-sm text-gray-400">Review at your pace. FSRS schedules the next time for each card.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500">{session.user.email}</span>
-          <button
-            type="button"
-            onClick={() => client.auth.signOut()}
-            className="rounded-lg border border-white/10 px-3 py-2 text-xs text-gray-400 transition hover:border-white/20 hover:text-white"
-          >Sign out</button>
-        </div>
-      </div>
-
-      <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-center gap-3 text-xs text-gray-500">
-          Select deck
+      <div className="flex items-center justify-between gap-3">
+        <label className="min-w-0">
+          <span className="sr-only">Filter cards by deck</span>
           <select
             value={filter}
             onChange={(event) => { setFilter(event.target.value as CardFilter); setRevealed(false); }}
-            className="rounded-lg border border-white/10 bg-[#1d2028] px-3 py-2 text-sm text-gray-200 outline-none focus:border-amber-300/50"
+            className="max-w-full rounded-lg border border-white/10 bg-[#1d2028] px-3 py-2 text-sm font-medium text-gray-200 outline-none transition focus:border-amber-300/50"
           >
             <option value="all">All Cards ({cards.length})</option>
             <option value="sentence">Sentence Deck ({cards.filter((card) => card.card_type === 'sentence').length})</option>
             <option value="vocabulary">Vocabulary Deck ({cards.filter((card) => card.card_type === 'vocabulary').length})</option>
           </select>
         </label>
-        <button type="button" onClick={loadCards} className="text-xs text-gray-500 hover:text-white">Refresh</button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link href="/cards/library" className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-gray-300 transition hover:bg-white/5 hover:text-white">Browse cards <span className="ml-1 text-gray-500">{cards.length}</span></Link>
+          <button type="button" onClick={loadCards} aria-label="Refresh cards" title="Refresh cards" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-base text-gray-500 transition hover:bg-white/5 hover:text-white">↻</button>
+        </div>
       </div>
 
       {error && <p role="alert" className="mt-4 rounded-lg border border-red-400/20 bg-red-400/[0.07] px-4 py-3 text-sm text-red-200">{error}</p>}
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <section className="min-h-[27rem] rounded-2xl border border-white/10 bg-[#1d2028] p-5 sm:p-8">
+      <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
+        <section className="min-h-[22rem] rounded-2xl border border-white/10 bg-[#1d2028] p-5 sm:p-6">
           {isLoading ? (
-            <div className="flex min-h-[23rem] items-center justify-center text-sm text-gray-500">Loading your cards…</div>
+            <div className="flex min-h-[18rem] items-center justify-center text-sm text-gray-500">Loading your cards…</div>
           ) : currentCard ? (
-            <div className="mx-auto flex min-h-[23rem] max-w-2xl flex-col">
+            <div className="mx-auto flex min-h-[18rem] max-w-4xl flex-col">
               <div className="flex items-center justify-between">
                 <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${currentCard.card_type === 'sentence' ? 'bg-amber-300/10 text-amber-200' : 'bg-sky-300/10 text-sky-200'}`}>
                   {currentCard.card_type}
@@ -342,7 +329,7 @@ export default function CardsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
+              <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
                 <p className="whitespace-pre-wrap text-2xl font-medium leading-relaxed text-white sm:text-3xl">{currentCard.front}</p>
                 {revealed && (
                   <div className="mt-8 w-full border-t border-white/[0.08] pt-6">
@@ -395,7 +382,7 @@ export default function CardsPage() {
               )}
             </div>
           ) : (
-            <div className="flex min-h-[23rem] flex-col items-center justify-center text-center">
+            <div className="flex min-h-[18rem] flex-col items-center justify-center text-center">
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-300/10 text-2xl text-emerald-200">✓</span>
               <h2 className="mt-5 text-xl font-semibold text-white">
                 {filteredCards.length ? (nextDueCard ? 'Next card is learning' : 'You’re all caught up') : 'No cards in this deck yet'}
@@ -412,37 +399,16 @@ export default function CardsPage() {
           )}
         </section>
 
-        <aside className="space-y-4">
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1d2028] p-5">
-            <p className="text-xs font-semibold tracking-wider text-gray-500">TODAY</p>
-            <p className="mt-3 text-3xl font-semibold text-white">{dueCards.length}</p>
-            <p className="mt-1 text-sm text-gray-500">cards due to review</p>
-          </div>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1d2028] p-5">
-            <p className="text-xs font-semibold tracking-wider text-gray-500">YOUR LIBRARY</p>
-            <div className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-gray-400">Sentence cards</span><span className="text-white">{cards.filter((card) => card.card_type === 'sentence').length}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Vocabulary cards</span><span className="text-white">{cards.filter((card) => card.card_type === 'vocabulary').length}</span></div>
+        <aside>
+          <section className="rounded-2xl border border-white/[0.08] bg-[#1d2028] p-4">
+            <div className="flex items-end justify-between gap-3">
+              <div><p className="text-[10px] font-semibold tracking-wider text-gray-500">DUE NOW</p><p className="mt-1 text-2xl font-semibold text-white">{dueCards.length}</p></div>
+              <div className="text-right text-xs text-gray-500">{cards.filter((card) => card.card_type === 'sentence').length} sentences<br />{cards.filter((card) => card.card_type === 'vocabulary').length} words saved</div>
             </div>
-          </div>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1d2028] p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold tracking-wider text-gray-500">EDIT SAVED CARDS</p>
-              <span className="text-[10px] text-gray-600">{filteredCards.length}</span>
-            </div>
-            <div className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
-              {filteredCards.map((card) => (
-                <div key={card.id} className="flex items-center justify-between gap-3 rounded-lg bg-[#15171d] px-3 py-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-gray-200">{card.front}</p>
-                    <p className="mt-0.5 text-[10px] capitalize text-gray-600">{card.card_type}</p>
-                  </div>
-                  <button type="button" onClick={() => startEditing(card)} className="shrink-0 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-amber-200 hover:bg-amber-300/10">Edit</button>
-                </div>
-              ))}
-              {!filteredCards.length && <p className="py-4 text-center text-xs text-gray-600">No cards to edit.</p>}
-            </div>
-          </div>
+            <Link href="/cards/library" className="mt-4 flex items-center justify-between rounded-lg border border-sky-300/20 bg-sky-300/[0.05] px-3 py-2.5 text-sm font-medium text-sky-200 transition hover:border-sky-300/40 hover:bg-sky-300/[0.08]">
+              Browse saved cards <span aria-hidden="true">→</span>
+            </Link>
+          </section>
         </aside>
       </div>
       {editingCard && editDraft && (
@@ -514,9 +480,8 @@ function EditField({ label, value, onChange, required = false, rows = 1, type = 
 
 function StudyPageFrame({ children }: { children: ReactNode }) {
   return (
-    <main className="min-h-dvh bg-[#15171d] px-4 py-6 text-gray-100 sm:px-8 sm:py-10">
-      <div className="mx-auto max-w-6xl">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 transition hover:text-white"><span aria-hidden="true">←</span> Hikari home</Link>
+    <main className="min-h-[calc(100dvh-3.5rem)] bg-[#15171d] px-4 py-5 text-gray-100 sm:px-8 sm:py-7">
+      <div className="mx-auto max-w-7xl">
         {children}
       </div>
     </main>

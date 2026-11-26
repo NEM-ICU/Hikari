@@ -7,6 +7,7 @@ export type CurriculumWord = {
 
 export type CurriculumLevel = {
   label: string;
+  radicals: { character: string; meaning: string; visual: string }[];
   kanji: string[];
   words: CurriculumWord[];
 };
@@ -17,6 +18,17 @@ const word = (word: string, reading: string, meaning: string, kanji: string): Cu
 export const KANJI_CURRICULUM: Record<number, CurriculumLevel> = {
   5: {
     label: 'Beginner',
+    radicals: [
+      { character: '日', meaning: 'sun', visual: '☀️' }, { character: '月', meaning: 'moon', visual: '🌙' },
+      { character: '木', meaning: 'tree', visual: '🌳' }, { character: '人', meaning: 'person', visual: '🧍' },
+      { character: '口', meaning: 'mouth', visual: '👄' }, { character: '山', meaning: 'mountain', visual: '⛰️' },
+      { character: '川', meaning: 'river', visual: '〰️' }, { character: '水', meaning: 'water', visual: '💧' },
+      { character: '火', meaning: 'fire', visual: '🔥' }, { character: '土', meaning: 'soil', visual: '🌱' },
+      { character: '女', meaning: 'woman', visual: '👩' }, { character: '子', meaning: 'child', visual: '🧒' },
+      { character: '手', meaning: 'hand', visual: '✋' }, { character: '目', meaning: 'eye', visual: '👁️' },
+      { character: '耳', meaning: 'ear', visual: '👂' }, { character: '雨', meaning: 'rain', visual: '🌧️' },
+      { character: '石', meaning: 'stone', visual: '🪨' }, { character: '糸', meaning: 'thread', visual: '🧵' },
+    ],
     kanji: ['日', '月', '火', '水', '木'],
     words: [
       word('日本', 'にほん', 'Japan', '日'), word('日曜日', 'にちようび', 'Sunday', '日'), word('毎日', 'まいにち', 'every day', '日'),
@@ -28,6 +40,17 @@ export const KANJI_CURRICULUM: Record<number, CurriculumLevel> = {
   },
   4: {
     label: 'Elementary',
+    radicals: [
+      { character: '金', meaning: 'gold / metal', visual: '🪙' }, { character: '土', meaning: 'soil', visual: '🌱' },
+      { character: '人', meaning: 'person', visual: '🧍' }, { character: '口', meaning: 'mouth', visual: '👄' },
+      { character: '日', meaning: 'sun', visual: '☀️' }, { character: '月', meaning: 'moon', visual: '🌙' },
+      { character: '木', meaning: 'tree', visual: '🌳' }, { character: '水', meaning: 'water', visual: '💧' },
+      { character: '火', meaning: 'fire', visual: '🔥' }, { character: '女', meaning: 'woman', visual: '👩' },
+      { character: '子', meaning: 'child', visual: '🧒' }, { character: '山', meaning: 'mountain', visual: '⛰️' },
+      { character: '川', meaning: 'river', visual: '〰️' }, { character: '手', meaning: 'hand', visual: '✋' },
+      { character: '目', meaning: 'eye', visual: '👁️' }, { character: '耳', meaning: 'ear', visual: '👂' },
+      { character: '雨', meaning: 'rain', visual: '🌧️' }, { character: '石', meaning: 'stone', visual: '🪨' },
+    ],
     kanji: ['金', '土', '先', '生', '名'],
     words: [
       word('お金', 'おかね', 'money', '金'), word('金曜日', 'きんようび', 'Friday', '金'), word('金色', 'きんいろ', 'gold color', '金'),
@@ -39,6 +62,17 @@ export const KANJI_CURRICULUM: Record<number, CurriculumLevel> = {
   },
   3: {
     label: 'Intermediate',
+    radicals: [
+      { character: '糸', meaning: 'thread', visual: '🧵' }, { character: '辶', meaning: 'movement', visual: '🚶' },
+      { character: '車', meaning: 'vehicle', visual: '🚗' }, { character: '足', meaning: 'foot', visual: '🦶' },
+      { character: '言', meaning: 'speech', visual: '💬' }, { character: '食', meaning: 'food', visual: '🍚' },
+      { character: '雨', meaning: 'rain', visual: '🌧️' }, { character: '山', meaning: 'mountain', visual: '⛰️' },
+      { character: '木', meaning: 'tree', visual: '🌳' }, { character: '人', meaning: 'person', visual: '🧍' },
+      { character: '口', meaning: 'mouth', visual: '👄' }, { character: '手', meaning: 'hand', visual: '✋' },
+      { character: '水', meaning: 'water', visual: '💧' }, { character: '火', meaning: 'fire', visual: '🔥' },
+      { character: '心', meaning: 'heart', visual: '❤️' }, { character: '刀', meaning: 'sword', visual: '🗡️' },
+      { character: '門', meaning: 'gate', visual: '🚪' }, { character: '田', meaning: 'rice field', visual: '🌾' },
+    ],
     kanji: ['旅', '着', '乗', '降', '運'],
     words: [
       word('旅行', 'りょこう', 'travel; trip', '旅'), word('旅館', 'りょかん', 'Japanese inn', '旅'), word('旅人', 'たびびと', 'traveler', '旅'),
@@ -50,6 +84,17 @@ export const KANJI_CURRICULUM: Record<number, CurriculumLevel> = {
   },
   2: {
     label: 'Upper intermediate',
+    radicals: [
+      { character: '言', meaning: 'speech', visual: '💬' }, { character: '心', meaning: 'heart', visual: '❤️' },
+      { character: '糸', meaning: 'thread', visual: '🧵' }, { character: '辶', meaning: 'movement', visual: '🚶' },
+      { character: '車', meaning: 'vehicle', visual: '🚗' }, { character: '食', meaning: 'food', visual: '🍚' },
+      { character: '金', meaning: 'metal', visual: '🪙' }, { character: '門', meaning: 'gate', visual: '🚪' },
+      { character: '田', meaning: 'rice field', visual: '🌾' }, { character: '水', meaning: 'water', visual: '💧' },
+      { character: '木', meaning: 'tree', visual: '🌳' }, { character: '火', meaning: 'fire', visual: '🔥' },
+      { character: '口', meaning: 'mouth', visual: '👄' }, { character: '人', meaning: 'person', visual: '🧍' },
+      { character: '手', meaning: 'hand', visual: '✋' }, { character: '土', meaning: 'soil', visual: '🌱' },
+      { character: '山', meaning: 'mountain', visual: '⛰️' }, { character: '刀', meaning: 'sword', visual: '🗡️' },
+    ],
     kanji: ['経', '済', '政', '治', '議'],
     words: [
       word('経済', 'けいざい', 'economy', '経済'), word('経験', 'けいけん', 'experience', '経'), word('経由', 'けいゆ', 'via; by way of', '経'),
@@ -61,6 +106,17 @@ export const KANJI_CURRICULUM: Record<number, CurriculumLevel> = {
   },
   1: {
     label: 'Advanced',
+    radicals: [
+      { character: '言', meaning: 'speech', visual: '💬' }, { character: '心', meaning: 'heart', visual: '❤️' },
+      { character: '糸', meaning: 'thread', visual: '🧵' }, { character: '辶', meaning: 'movement', visual: '🚶' },
+      { character: '食', meaning: 'food', visual: '🍚' }, { character: '金', meaning: 'metal', visual: '🪙' },
+      { character: '門', meaning: 'gate', visual: '🚪' }, { character: '車', meaning: 'vehicle', visual: '🚗' },
+      { character: '雨', meaning: 'rain', visual: '🌧️' }, { character: '田', meaning: 'rice field', visual: '🌾' },
+      { character: '石', meaning: 'stone', visual: '🪨' }, { character: '人', meaning: 'person', visual: '🧍' },
+      { character: '口', meaning: 'mouth', visual: '👄' }, { character: '手', meaning: 'hand', visual: '✋' },
+      { character: '水', meaning: 'water', visual: '💧' }, { character: '木', meaning: 'tree', visual: '🌳' },
+      { character: '火', meaning: 'fire', visual: '🔥' }, { character: '刀', meaning: 'sword', visual: '🗡️' },
+    ],
     kanji: ['概', '認', '適', '複', '確'],
     words: [
       word('概念', 'がいねん', 'concept', '概'), word('概要', 'がいよう', 'outline; summary', '概'), word('概算', 'がいさん', 'rough estimate', '概'),

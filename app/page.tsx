@@ -35,26 +35,15 @@ const sections = [
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#15171d] text-gray-100">
+    <main className="relative min-h-[calc(100dvh-3.5rem)] overflow-hidden bg-[#15171d] text-gray-100">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute -top-48 left-1/2 h-[34rem] w-[54rem] -translate-x-1/2 rounded-full bg-amber-500/[0.07] blur-[120px]" />
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff0b_1px,transparent_1px)] [background-size:28px_28px] opacity-30" />
       </div>
 
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5 py-5 sm:px-8 sm:py-6">
-        <header className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3" aria-label="Hikari home">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fca311] text-lg font-black text-[#171717] shadow-lg shadow-amber-500/15">
-              光
-            </span>
-            <span className="text-lg font-bold tracking-tight">Hikari</span>
-          </Link>
-          <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-gray-400">
-            JAPANESE STUDY STUDIO
-          </span>
-        </header>
+      <div className="relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-6xl flex-col px-5 py-5 sm:px-8 sm:py-6">
 
-        <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center py-8 sm:py-10">
+        <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center py-6 sm:py-8">
           <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-amber-300/15 bg-amber-300/[0.06] px-3 py-1.5 text-xs font-medium text-amber-200">
             <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
             YOUR NEXT STEP IN JAPANESE
@@ -66,7 +55,7 @@ export default function HomePage() {
             Mine real sentences from videos, build a personal vocabulary, and make every study session count.
           </p>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {sections.map((section) => {
               const card = (
                 <div className={`group relative h-full overflow-hidden rounded-2xl border p-4 transition duration-200 sm:p-5 ${

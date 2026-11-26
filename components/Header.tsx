@@ -2,6 +2,9 @@
 
 import React, { useCallback } from 'react';
 import Link from 'next/link';
+import AccountMenu from '@/components/AccountMenu';
+import ThemeToggle from '@/components/ThemeToggle';
+import { useSupabaseSession } from '@/lib/useSupabaseSession';
 
 interface HeaderProps {
   videoUrl: string;
@@ -14,6 +17,7 @@ export default function Header({
   onVideoUrlChange,
   onLoadVideo,
 }: HeaderProps) {
+  const { client, session } = useSupabaseSession();
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') onLoadVideo();
@@ -22,15 +26,9 @@ export default function Header({
   );
 
   return (
-    <header className="flex flex-col sm:flex-row items-center gap-3 px-4 py-3 bg-[#222732] border-b border-gray-700/50">
+    <header className="flex flex-col items-center gap-3 border-b border-gray-700/50 bg-[#222732] px-4 py-2.5 sm:flex-row">
       {/* Logo */}
       <div className="flex shrink-0 items-center gap-3">
-        <Link
-          href="/"
-          className="rounded-md px-2 py-1.5 text-xs font-medium text-gray-400 transition hover:bg-white/[0.05] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fca311]"
-        >
-          ← Home
-        </Link>
         <Link href="/" className="flex items-center gap-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fca311]" aria-label="Hikari home">
           <div className="w-8 h-8 rounded-lg bg-[#fca311] flex items-center justify-center shadow-sm shadow-amber-500/20">
             <span className="text-black font-black text-sm" aria-hidden="true">光</span>
@@ -57,6 +55,11 @@ export default function Header({
         >
           Load
         </button>
+      </div>
+
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        {client && session && <AccountMenu client={client} email={session.user.email ?? 'Account'} />}
+        <ThemeToggle />
       </div>
     </header>
   );

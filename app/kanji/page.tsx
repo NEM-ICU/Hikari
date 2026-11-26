@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import EmailMagicLink from '@/components/EmailMagicLink';
 import KanjiDecks from '@/components/KanjiDecks';
@@ -356,18 +355,19 @@ export default function KanjiPage() {
 
   return (
     <KanjiFrame>
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div><p className="text-xs font-semibold tracking-[0.18em] text-amber-300">KANJI CORNER · 漢字コーナー</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">A path from character to word.</h1><p className="mt-2 max-w-xl text-sm leading-6 text-gray-400">Learn its pieces, recall its meaning and reading, then meet it again inside real vocabulary.</p></div>
-        <div className="flex items-center gap-3"><span className="text-xs text-gray-500">{session.user.email}</span><button type="button" onClick={() => client.auth.signOut()} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-gray-400 hover:text-white">Sign out</button></div>
+      <header className="max-w-3xl">
+        <p className="text-[11px] font-semibold tracking-[0.16em] text-amber-300">KANJI CORNER · 漢字コーナー</p>
+        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-white">A path from character to word.</h1>
+        <p className="mt-1.5 max-w-xl text-sm leading-6 text-gray-400">Learn its pieces, recall its meaning and reading, then meet it again inside real vocabulary.</p>
       </header>
 
-      <div className="mt-7 grid gap-3 sm:grid-cols-3">
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <Stat label="LESSONS" value={lessonItems.length} note="Ready to learn" />
         <Stat label="REVIEWS DUE" value={dueItems.length} note="Available now" />
         <Stat label="GURU+" value={masteredCount} note={`of ${items.length} learned kanji`} />
       </div>
 
-      <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap rounded-xl border border-white/10 bg-[#1d2028] p-1">
           {(['dashboard', 'lessons', 'reviews', 'browse', 'vocabulary'] as const).map((tab) => <button key={tab} type="button" onClick={() => setView(tab)} className={`rounded-lg px-3 py-2 text-sm ${view === tab ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-white'}`}>{tab === 'dashboard' ? 'Overview' : tab === 'lessons' ? `Lessons${lessonItems.length ? ` · ${lessonItems.length}` : ''}` : tab === 'reviews' ? `Reviews${dueItems.length ? ` · ${dueItems.length}` : ''}` : tab === 'browse' ? 'Kanji library' : 'Jukugo decks'}</button>)}
         </div>
@@ -377,7 +377,7 @@ export default function KanjiPage() {
       {error && <p role="alert" className="mt-4 rounded-lg border border-red-400/20 bg-red-400/[0.07] px-4 py-3 text-sm text-red-200">{error}</p>}
 
       {view === 'dashboard' ? (
-        <section className="mt-5 rounded-2xl border border-white/10 bg-[#1d2028] p-6 sm:p-8">
+        <section className="mt-5 rounded-2xl border border-white/10 bg-[#1d2028] p-5 sm:p-6">
           <div><p className="text-xs font-semibold tracking-[0.16em] text-amber-300">TODAY’S STUDY</p><h2 className="mt-2 text-2xl font-semibold text-white">Small batches, strong recall.</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">First learn a few new characters. Later, answer meaning and reading separately; a kanji advances only when both are recalled.</p></div>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button type="button" onClick={() => setView('lessons')} className="rounded-xl border border-sky-300/15 bg-sky-300/[0.05] p-5 text-left transition hover:border-sky-300/30"><span className="text-xs font-semibold tracking-wider text-sky-200">NEW KANJI</span><span className="mt-2 block text-3xl font-semibold text-white">{lessonItems.length}</span><span className="mt-1 block text-sm text-gray-400">{lessonItems.length ? 'Continue your lesson queue' : 'Add characters from the library'}</span></button>
@@ -387,11 +387,11 @@ export default function KanjiPage() {
         </section>
       ) : view === 'lessons' || view === 'reviews' ? (
         <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <section className="flex min-h-[27rem] flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#1d2028] p-6 text-center sm:p-9">
+          <section className="flex min-h-[22rem] flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#1d2028] p-5 text-center sm:p-7">
             {loadingItems ? <p className="text-sm text-gray-500">Loading your kanji…</p> : view === 'lessons' && currentLesson ? (
               <div className="w-full max-w-xl">
                 <div className="flex items-center justify-between text-xs text-gray-500"><span>NEW KANJI · {lessonItems.length} IN QUEUE</span><span>{lessonStep === 0 ? 'Learn' : `Check ${lessonStep} of 2`}</span></div>
-                <div className="py-6 text-8xl font-medium text-white">{currentLesson.kanji}</div>
+                <div className="py-4 text-6xl font-medium text-white">{currentLesson.kanji}</div>
                 {lessonStep === 0 ? <>
                   <p className="text-lg text-amber-200">{currentLesson.meanings.join(' · ')}</p>
                   <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2"><InfoBlock title="ON’YOMI" value={currentLesson.on_readings.join('、') || '—'} /><InfoBlock title="KUN’YOMI" value={currentLesson.kun_readings.join('、') || '—'} /></div>
@@ -403,7 +403,7 @@ export default function KanjiPage() {
             ) : view === 'reviews' && shownReview ? (
               <div className="w-full max-w-xl">
                 <div className="flex items-center justify-between text-xs text-gray-500"><span>{stageName(shownReview.srs_stage)}</span><span>{dueItems.length} due</span></div>
-                <div className="py-8 text-8xl font-medium text-white">{shownReview.kanji}</div>
+                <div className="py-5 text-6xl font-medium text-white">{shownReview.kanji}</div>
                 {answered === null ? <>
                   <p className="text-xs font-semibold tracking-[0.18em] text-amber-300">{promptType === 'meaning' ? 'CHECK 1 OF 2 · MEANING' : 'CHECK 2 OF 2 · READING'}</p>
                   {reviewStep === 1 && <p className="mt-2 text-xs text-emerald-200">Meaning recalled. Now do the reading.</p>}
@@ -445,7 +445,7 @@ function InfoBlock({ title, value }: { title: string; value: string }) {
 }
 
 function KanjiFrame({ children }: { children: ReactNode }) {
-  return <main className="min-h-dvh bg-[#15171d] px-4 py-6 text-gray-100 sm:px-8 sm:py-10"><div className="mx-auto max-w-6xl"><Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 transition hover:text-white"><span aria-hidden="true">←</span> Hikari home</Link><div className="mt-7">{children}</div></div></main>;
+  return <main className="min-h-[calc(100dvh-3.5rem)] bg-[#15171d] px-4 py-5 text-gray-100 sm:px-8 sm:py-7"><div className="mx-auto max-w-6xl">{children}</div></main>;
 }
 
 function AuthNotice() {

@@ -345,11 +345,10 @@ export default function KotoMinePage() {
       />
 
       {/* Main two-column layout */}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         {/* ── Left Column (65%) ── */}
         <div
-          className="flex min-h-0 flex-col overflow-hidden border-r border-gray-700/50"
-          style={{ width: '65%' }}
+          className="flex min-h-0 w-full flex-[0_0_58%] flex-col overflow-hidden border-b border-gray-700/50 lg:w-[65%] lg:flex-none lg:border-b-0 lg:border-r"
         >
           {/* Video Player */}
           <div className="shrink-0">
@@ -360,7 +359,7 @@ export default function KotoMinePage() {
                 className="w-full bg-[#111318] flex flex-col items-center justify-center text-gray-600 gap-3"
                 style={{ aspectRatio: '16/9' }}
               >
-                <div className="text-5xl">🎌</div>
+                <div className="text-4xl">🎌</div>
                 <p className="text-sm">Paste a YouTube URL above to begin</p>
               </div>
             )}
@@ -426,7 +425,7 @@ export default function KotoMinePage() {
         </div>
 
         {/* ── Right Column (35%) ── */}
-        <div className="flex min-h-0 flex-col overflow-hidden" style={{ width: '35%' }}>
+        <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden lg:w-[35%] lg:flex-none">
           <MiningPreview
             minedData={minedData}
             videoId={videoId}
